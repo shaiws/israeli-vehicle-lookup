@@ -1,4 +1,4 @@
-export interface ResourceDef {
+﻿export interface ResourceDef {
   key: string
   title: string
   resourceId: string
@@ -37,18 +37,6 @@ export const RESOURCES: ResourceDef[] = [
     key: 'cancelled',
     title: 'ביטול סופי',
     resourceId: '851ecab1-0622-4dbe-a6c7-f950cf82abf9',
-    role: 'fallback',
-  },
-  {
-    key: 'cancelled_older_a',
-    title: 'ביטול סופי (ארכיון ישן)',
-    resourceId: '4e6b9724-4c1e-43f0-909a-154d4cc4e046',
-    role: 'fallback',
-  },
-  {
-    key: 'cancelled_older_b',
-    title: 'ביטול סופי (ארכיון נוסף)',
-    resourceId: 'ec8cbc34-72e1-4b69-9c48-22821ba0bd6c',
     role: 'fallback',
   },
   {

@@ -1,4 +1,4 @@
-import { RESOURCES, type ResourceDef } from './resources'
+﻿import { RESOURCES, type ResourceDef } from './resources'
 import { digitsOnlyPlate, searchByPlate } from './ckan'
 import type { DatasetHit, LookupResult } from './types'
 
@@ -45,13 +45,20 @@ function firstRecord(hits: DatasetHit[]) {
   return undefined
 }
 
+function pushUnique(sections: DatasetHit[], hits: DatasetHit[], errors: string[]) {
+  for (const h of hits) {
+    if (!sections.some((s) => s.key === h.key)) sections.push(h)
+    if (h.error) errors.push(`${h.title}: ${h.error}`)
+  }
+}
+
 export async function lookupVehicle(
   rawPlate: string,
   signal?: AbortSignal,
 ): Promise<LookupResult> {
   const plate = digitsOnlyPlate(rawPlate)
   if (!plate || plate.length < 5 || plate.length > 8) {
-    throw new Error('יש להזין מספר רישוי בן 5–8 ספרות (ללא מקפים)')
+    throw new Error('מספר לוחית רישוי חייב להיות באורך 5–8 ספרות (ספרות בלבד)')
   }
 
   const errors: string[] = []
@@ -60,10 +67,7 @@ export async function lookupVehicle(
   const primaryHits = await Promise.all(
     PRIMARY.map((d) => queryResource(d, plate, signal)),
   )
-  for (const h of primaryHits) {
-    sections.push(h)
-    if (h.error) errors.push(`${h.title}: ${h.error}`)
-  }
+  pushUnique(sections, primaryHits, errors)
 
   let primaryHit = firstRecord(primaryHits)
 
@@ -71,25 +75,22 @@ export async function lookupVehicle(
     const fallbackHits = await Promise.all(
       FALLBACK.map((d) => queryResource(d, plate, signal)),
     )
-    for (const h of fallbackHits) {
-      sections.push(h)
-      if (h.error) errors.push(`${h.title}: ${h.error}`)
-    }
+    pushUnique(sections, fallbackHits, errors)
     primaryHit = firstRecord(fallbackHits)
   }
 
-  // Always pull history + recalls when a plate record was found
-  if (primaryHit) {
-    const pending = [...HISTORY, ...RECALL].filter(
-      (d) => !sections.some((s) => s.key === d.key),
-    )
-    const extraHits = await Promise.all(
-      pending.map((d) => queryResource(d, plate, signal)),
-    )
-    for (const h of extraHits) {
-      sections.push(h)
-      if (h.error) errors.push(`${h.title}: ${h.error}`)
-    }
+  // Always query history + recalls. Treat a history hit as "found" when the
+  // live registries miss (e.g. active datastore temporarily empty).
+  const pending = [...HISTORY, ...RECALL].filter(
+    (d) => !sections.some((s) => s.key === d.key),
+  )
+  const extraHits = await Promise.all(
+    pending.map((d) => queryResource(d, plate, signal)),
+  )
+  pushUnique(sections, extraHits, errors)
+
+  if (!primaryHit) {
+    primaryHit = firstRecord(extraHits.filter((h) => HISTORY.some((d) => d.key === h.key)))
   }
 
   const order = [...PRIMARY, ...FALLBACK, ...HISTORY, ...RECALL].map(
