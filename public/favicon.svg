@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="12" fill="#1d4ed8"/>
+  <rect x="8" y="22" width="48" height="20" rx="4" fill="#fde047" stroke="#0f172a" stroke-width="2"/>
+  <text x="32" y="37" text-anchor="middle" font-family="Arial Black,Arial" font-size="14" font-weight="700" fill="#0f172a">IL</text>
+</svg>
